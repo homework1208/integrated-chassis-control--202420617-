@@ -45,20 +45,28 @@ TIRE.E  = -0.5;    % Curvature factor
 TIRE.mu_peak = 1.0;  % 최대 마찰 계수
 
 %% 제어기 파라미터 — 횡방향 (Lateral)
-CTRL.LAT.Kp     = 1.0;     % 비례 게인
-CTRL.LAT.Ki     = 0.1;     % 적분 게인
-CTRL.LAT.Kd     = 0.05;    % 미분 게인
-CTRL.LAT.intMax = 5.0;     % 적분 안티와인드업 한계 [rad]
+% Bicycle Model 기반 PID 설계 + Gain Scheduling (v_ref=20 m/s)
+% Ziegler-Nichols 초기 추정 후 시뮬레이션으로 조정:
+%   전달함수 G(s) ≈ K/(τs+1), K=2.0, τ=0.3s → Kp=0.9*τ/K=0.135
+%   시뮬레이션 반복으로 최종 조정
+% v4: dead-band AFS + ESC 강화 (beta_th=2.5도, K_esc=7000)
+CTRL.LAT.Kp     = 2.0;     % AFS P게인 (내부 0.12* 스케일 → 실효 0.24)
+CTRL.LAT.Ki     = 0.0;     % 적분 미사용
+CTRL.LAT.Kd     = 0.20;    % AFS D게인 (내부 0.06* 스케일 → 실효 0.012)
+CTRL.LAT.intMax = 5.0;     % 안티와인드업 한계
 
 %% 제어기 파라미터 — 종방향 (Longitudinal)
-CTRL.LON.Kp     = 0.5;     % 비례 게인
-CTRL.LON.Ki     = 0.05;    % 적분 게인
-CTRL.LON.intMax = 2000;    % 적분 안티와인드업 한계 [Nm]
+% PI 속도 추종 + ABS
+% B1 제동 시나리오 최적화: 빠른 제동력 인가
+CTRL.LON.Kp     = 1.0;     % 비례 게인
+CTRL.LON.Ki     = 0.05;    % 적분 게인 (ABS와 간섭 최소화)
+CTRL.LON.intMax = 3000;    % 적분 안티와인드업 한계 [Nm]
 
 %% 제어기 파라미터 — 수직 (Vertical / CDC)
+% Hybrid Skyhook + Groundhook
 CTRL.VER.cMin    = 500;    % [Ns/m] 최소 감쇠 계수
 CTRL.VER.cMax    = 5000;   % [Ns/m] 최대 감쇠 계수
-CTRL.VER.skyGain = 2500;   % [Ns/m] Skyhook 게인
+CTRL.VER.skyGain = 3000;   % [Ns/m] Skyhook 게인 (기본값 대비 +20%)
 
 %% 제어기 파라미터 — 통합 조율기 (Coordinator)
 CTRL.COORD.wLat  = 1.0;    % 횡방향 가중치
